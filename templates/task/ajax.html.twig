@@ -1,0 +1,197 @@
+{% extends 'base.html.twig' %} 
+
+{% block title %}TODOlist{% endblock %}
+
+{% block body %} 
+<nav class="navbar navbar-expand-lg navbar-light bg-light" style="height: 70px;">
+   <ul class="nav navbar-nav navbar-right ">          
+         <li><a class="nav-link" id = "loadtask" href = "#">Load tasks</a></li>
+         <li><a class="content_toggle nav-link" href = "#">Create task</a></li>  
+   </ul>
+</nav>
+
+<div class="container">
+   <div class="row">
+      <div class="col-md-12">
+         <div class="card bg-light mb-3 mt-3">
+            <div class="card-body">
+               <div class="content_block" style="display:none;">
+                  <h2 class="m-2">Create task</h2>
+                  <div class="row">
+                     <div class="section-row">
+                        <div class="col-md-10 ml-md-auto">
+                           <div class="card bg-light mb-3 mt-5">
+                              <div class="card-body">
+                                 {{ form_start(form) }}
+                                 <div class="form_group">
+                                       <div class="col-md-12 mb-3">
+                                       {{ form_row(form.description) }}
+                                       </div>
+                                 </div>
+                                 <div class="form_group">
+                                       <div class="col-md-12 mb-3">
+                                       {{form_row(form.date)}}
+                                       </div>
+                                 </div>
+                                 <div class="form-group">
+                                       <div class="col-md-8 col-md-offset-4">
+                                          <button type="button" class="btn btn-primary" id="submitButton"> Save</button>
+                                       </div>
+                                 </div>
+                                 {{ form_end(form) }}
+                              </div>
+                           </div> 
+                        </div>         
+                     </div>
+                  </div>
+               </div>
+               </br> 
+               <table class = "table">  
+                  <tbody id = "task"></tbody>  
+               </table> 
+               <div class="content_change">
+      
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+{% endblock %} 
+{% block javascripts %} 
+    {{parent()}}
+    <script>
+      $(document).ready(function(){   
+
+         $('.content_toggle').click(function(){
+            $('.content_block').slideToggle(300);      
+            return false;
+         });
+
+         $("#loadtask").on("click", function(event){  
+            $.ajax({  
+               url:        '/',  
+               type:       'POST', 
+               data: {},  
+               dataType:   'json',  
+               async:      true,  
+               
+               success: function(data, status) {  
+                  var e = $('<tr><th>Description</th><th>Date</th><th>Completed</th><th>Delete</th></tr>');  
+                  $('#task').html('');  
+                  $('#task').append(e);  
+                  '<div>Lol</div>'
+                  for(i = 0; i < data.length; i++) {  
+                     task = data[i];
+                     idTask = task['idTask'];
+                     description = task['description'];
+                     complet = task['completed'];
+                     completed = new Boolean(complet);
+                     if (completed == true) {
+                        check = 'checked'
+                     }else {check = ''}
+                     date = task['date']['date'];
+                     var e = $('<tr><td class = "description"><a class="change" id='+ idTask +
+                        ' href = "#">' + description + '</a></td><td class = "date">' + date.substr(0, 10) + 
+                        '</td><td class = "chek"><input type="checkbox" class="complet" id='+idTask+
+                        ' value='+completed+' '+ check +'></td><td><a href="#" id='+ idTask 
+                        +' class="del">Delete</a></td></tr>'); 
+                     $('#task').append(e);       
+                  }
+
+                  $('.change').on("click", function(e){     
+                     $.ajax({
+                        type: "POST",
+                        url: '{{ path('change') }}',
+                        data: {id: $(this).attr("id")},
+                        dataType:   'json',
+                        success: function (data, status) {
+                           $(".content_change").html("");
+                           id = data[0];
+                           description = data[1];
+                           date = data[2]['date'];
+                           completed = new Boolean(data[3]);
+                           var e = $('<div class="section-row"><div class="col-md-10 ml-md-auto"><div class="card bg-light mb-3 mt-5"><div class="card-body"><form action="" method="post" id="myForm"><div class="form_group"><div class="col-md-12 mb-3"><label for="POST-description">Description:</label><input id="POST-description" type="text" name="description" value=' + description + 
+                              '></div></div><div class="form_group"><div class="col-md-12 mb-3"><label for="POST-date">Data:</label><input id="POST-date" type="date" name="date" value=' + date + 
+                              '></div></div><div class="form_group"><div class="col-md-12 mb-3"><input type="submit" class="changeButton btn btn-primary" id='+ id +' value="Change"></div></div></form></div></div></div></div>'); 
+                           $('.content_change').append(e);
+
+                           $('.changeButton').on("click", function(e){ 
+                              var data = {'id': id, 'completed': completed,};
+                              $('#myForm').find ('input').each(function() {
+                                 data[this.name] = $(this).val();
+                              });
+                              $.ajax({
+                                 type: "POST",
+                                 url: '{{ path('changetask') }}',
+                                 data: {data},
+                                 dataType:   'json',
+                                 success: function (data, status) {
+                                    $(".content_change").html("");
+                                    $('#loadtask').trigger('click');
+                                 },
+                                 error: function (xhr, textStatus, errorThrown) {
+                                 }
+                              });
+                              return false;
+                           });
+
+                        },
+                        error: function (xhr, textStatus, errorThrown) {
+                        }
+                     });
+                     return false;
+                  }); 
+                  $('.del').on("click", function(e){
+                     $.ajax({
+                        type: "POST",
+                        url: '{{ path('delete') }}',
+                        data: { id: $(this).attr("id") },
+                        dataType:   'json',
+                        success: function (data, status) {
+                           $('#loadtask').trigger('click');
+                        },
+                        error: function (xhr, textStatus, errorThrown) {
+                        }
+                     });
+                     return false;
+                  }); 
+
+                  $('.complet').on("click", function(e){
+                     $.ajax({
+                        type: "POST",
+                        url: '{{ path('update') }}',
+                        data: {id: $(this).attr("id"), completed:$(this).val() },
+                        dataType:   'json',
+                        success: function (data, status) {
+                           $('#loadtask').trigger('click');
+                        },
+                        error: function (xhr, textStatus, errorThrown) {
+                        }
+                     });
+                     return false;
+                  }); 
+               },  
+               error : function(xhr, textStatus, errorThrown) {  
+               }  
+            });  
+         });
+
+
+         $("#submitButton").on("click", function (event) {
+            var val = $( ":input" ).serializeArray();
+            $.ajax({
+               type: "POST",
+               url: '{{ path('taskcreate') }}',
+               data: val,
+               dataType:   'json',
+               success: function (data, status) {
+                  $('#loadtask').trigger('click');
+               },
+               error: function (xhr, textStatus, errorThrown) {
+               }
+            });
+         })
+      });
+   </script> 
+{% endblock %}
