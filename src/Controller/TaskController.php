@@ -19,9 +19,7 @@ class TaskController extends AbstractController
         $form = $this->createForm(TaskFormType::class, $task);
         $form->handleRequest($request);
 
-        $tasks = $this->getDoctrine() 
-            ->getRepository(Task::class) 
-            ->findAll(); 
+        $tasks = $this->getDoctrine() ->getRepository(Task::class)->findAll(); 
         if ($request->isXmlHttpRequest() || $request->query->get('showJson') == 1) {  
             $jsonData = array();  
             $idx = 0;  
@@ -53,7 +51,6 @@ class TaskController extends AbstractController
         $description =$data['task_form']['description'];
         $date =$data['task_form']['date'];
         if ($request->isXmlHttpRequest()) {
-
             if ($form->isSubmitted() && $form->isValid()) {
 
                 $task->setDescription($description);
@@ -66,7 +63,6 @@ class TaskController extends AbstractController
         
                 return new JsonResponse($data);
             }
-
         }
         return $this->render('task/ajax.html.twig', ['form' => $form->createView()]);
     }
